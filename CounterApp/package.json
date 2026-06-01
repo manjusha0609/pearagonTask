@@ -1,0 +1,13 @@
+{
+    "name":"counte-app",
+    "version":"1.0.0",
+    "description":"A simple counter app",
+    "main":"index.js",
+    "scripts":{
+        "start":"node server.js"
+    },
+    "dependencies": {
+        "express":"^5.2.1"
+    }
+
+}

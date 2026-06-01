@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Counter</title>
+  </head>
+  <body>
+
+    <h1>Counter</h1>
+
+    <!-- Shows the current count number -->
+    <p id="count-display">...</p>
+
+    <!-- Increment button: adds 1 to the count -->
+    <button id="increment-btn">Increment</button>
+
+    <br /><br />
+
+    <!-- Text field for the multiplier number -->
+    <label for="multiplier">Multiplier</label>
+    <input type="number" id="multiplier" value="1" />
+
+    <!-- Multiply button: multiplies count by the multiplier value -->
+    <button id="multiply-btn">Multiply</button>
+
+    <!-- Shows error messages if something goes wrong -->
+    <p id="error-msg"></p>
+
+    <script>
+      // Grab references to the HTML elements we need to interact with
+      const countDisplay   = document.getElementById("count-display");
+      const incrementBtn   = document.getElementById("increment-btn");
+      const multiplyBtn    = document.getElementById("multiply-btn");
+      const multiplierInput = document.getElementById("multiplier");
+      const errorMsg       = document.getElementById("error-msg");
+
+      // Keeps track of the current count in the browser
+      let currentCount = 0;
+
+      // Updates the number shown on the page
+      function setCount(n) {
+        currentCount = n;
+        countDisplay.textContent = n;
+      }
+
+      // Shows an error message on the page for 7 seconds
+      function showError(msg) {
+        errorMsg.textContent = msg;
+        setTimeout(() => errorMsg.textContent = "", 7000);
+      }
+
+      // Sends a POST request to /increment with a value
+      // Returns the new count from the server
+      async function postIncrement(value) {
+        const res = await fetch("/increment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ value }),  // e.g. sends: {"value": 1}
+        });
+        const data = await res.json();           // parse the server's JSON response
+        if (!res.ok) throw new Error(data.error); // if status 400+, throw the error
+        return data.count;                         // return the new count
+      }
+
+      // When the page loads, fetch the current count from the server
+      async function loadCount() {
+        const res  = await fetch("/count");  // GET /count
+        const data = await res.json();       // e.g. { count: 5 }
+        setCount(data.count);
+      }
+
+      // When Increment is clicked, send value=1 to /increment
+      incrementBtn.addEventListener("click", async () => {
+        try {
+          const newCount = await postIncrement(1);
+          setCount(newCount);
+        } catch (err) {
+          showError(err.message);
+        }
+      });
+
+      // When Multiply is clicked:
+      // - read the multiplier input
+      // - calculate delta so: currentCount + delta = currentCount * multiplier
+      // - send that delta to /increment
+      multiplyBtn.addEventListener("click", async () => {
+        const multiplier = parseInt(multiplierInput.value, 10); // read input as integer
+        if (isNaN(multiplier)) {
+          showError("Multiplier must be a number.");
+          return;
+        }
+        const delta = (multiplier - 1) * currentCount; // e.g. count=4, multiplier=7 → delta=24
+        try {
+          const newCount = await postIncrement(delta);
+          setCount(newCount);
+        } catch (err) {
+          showError(err.message);
+        }
+      });
+
+      // Run loadCount when the page first opens
+      loadCount();
+    </script>
+
+  </body>
+</html>
